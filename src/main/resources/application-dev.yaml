@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/core_tracker?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+    show-sql: true
+
+app:
+  security:
+    jwt:
+      secret: "a7a1cb9a37508977d8a019c61a5d3c33531d9047818ef17560940cc6b995a6489b4e0d42ba56d311b09f95112ea0f4c89d4b601b2856bd3482abe81b2643f1d2"

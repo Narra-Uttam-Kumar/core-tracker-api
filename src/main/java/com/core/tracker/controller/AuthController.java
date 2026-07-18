@@ -55,7 +55,8 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
             );
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("message", "Invalid structural identity credentials."));
+            e.printStackTrace(); // Logs the exact error (e.g., BadCredentialsException)
+            return ResponseEntity.status(401).body(Map.of("message", "Authentication error: " + e.getMessage()));
         }
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(request.username());

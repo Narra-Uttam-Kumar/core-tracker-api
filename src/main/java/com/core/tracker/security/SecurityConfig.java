@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -24,16 +25,27 @@ public class SecurityConfig {
 
     private final JwtRequestFilter jwtRequestFilter;
     private final List<String> allowedOrigins;
+    private final CustomUserDetailsService userDetailsService;
 
     public SecurityConfig(JwtRequestFilter jwtRequestFilter, 
-                          @Value("${app.security.cors.allowed-origins}") List<String> allowedOrigins) {
+                          @Value("${app.security.cors.allowed-origins}") List<String> allowedOrigins,
+                          CustomUserDetailsService userDetailsService) {
         this.jwtRequestFilter = jwtRequestFilter;
         this.allowedOrigins = allowedOrigins;
+        this.userDetailsService = userDetailsService;
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
     }
 
     @Bean
@@ -46,11 +58,11 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                // Added "/" and "/error" to allow public access
                 .requestMatchers("/api/auth/**", "/", "/error").permitAll()
                 .anyRequest().authenticated()
             )
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authenticationProvider(authenticationProvider()); // Explicitly set the provider
 
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

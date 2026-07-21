@@ -1,31 +1,32 @@
 spring:
   application:
     name: core-tracker-api
+
   datasource:
-    # Use environment variables
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-    driver-class-name: ${DB_DRIVER:com.mysql.cj.jdbc.Driver}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: none
-    
     show-sql: false
     open-in-view: false
+
   threads:
     virtual:
       enabled: true
-  
+
 app:
   security:
     jwt:
-      # NEVER hardcode this in production. Render will provide it via environment variables.
       secret: ${JWT_SECRET}
       expiration-ms: 18000000
     cors:
-      # This will now accept a comma-separated list from an environment variable
       allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
+
   rate-limit:
     capacity: 100
     refill-rate: 10

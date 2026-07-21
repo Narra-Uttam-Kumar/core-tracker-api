@@ -4,18 +4,26 @@ import com.core.tracker.dto.Records.AuthRequest;
 import com.core.tracker.model.User;
 import com.core.tracker.repository.UserRepository;
 import com.core.tracker.security.JwtTokenUtil;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -36,31 +44,43 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody AuthRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody AuthRequest request) {
         if (userRepository.findByUsername(request.username()).isPresent()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Username configuration occupied."));
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("message", "Username configuration occupied."));
         }
+
         User user = User.builder()
                 .username(request.username())
                 .password(passwordEncoder.encode(request.password()))
                 .build();
+
         userRepository.save(user);
         return ResponseEntity.ok(Map.of("message", "Operator initialized successfully."));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody AuthRequest request) {
         try {
             authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
             );
+        } catch (BadCredentialsException e) {
+            log.warn("Authentication failed for user: {}", request.username());
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid username or password."));
         } catch (Exception e) {
-            e.printStackTrace(); // Logs the exact error (e.g., BadCredentialsException)
-            return ResponseEntity.status(401).body(Map.of("message", "Authentication error: " + e.getMessage()));
+            log.error("Authentication system error: ", e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "An authentication error occurred."));
         }
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(request.username());
         final String token = jwtTokenUtil.generateToken(userDetails);
+        
         return ResponseEntity.ok(Map.of("token", token));
     }
 }

@@ -48,12 +48,28 @@ public class HabitController {
 
     @PostMapping("/toggle")
     public ResponseEntity<?> toggleHabit(@RequestBody ToggleRequest request) {
-        User user = getAuthenticatedUser();
+
         try {
-            habitOperationService.toggleHabitDay(user, request.habitType(), request.dayNumber());
-            return ResponseEntity.ok(Map.of("message", "Metric tracking level modified safely."));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+
+            User user = getAuthenticatedUser();
+
+            habitOperationService.toggleHabitDay(
+                    user,
+                    request.habitType(),
+                    request.dayNumber());
+
+            return ResponseEntity.ok(
+                    Map.of("message", "Habit updated"));
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .status(500)
+                    .body(Map.of(
+                            "message",
+                            e.getMessage()));
         }
     }
 
